@@ -146,11 +146,6 @@ void Shortcut::setupComponent(){
     ui->systemLabel->setText(tr("System Shortcut"));
     ui->customLabel->setText(tr("Custom Shortcut"));
 
-    ui->customListWidget->setFocusPolicy(Qt::NoFocus);
-    ui->customListWidget->setSelectionMode(QAbstractItemView::NoSelection);
-    ui->customListWidget->setSpacing(0);
-    ui->customListWidget->setMaximumWidth(960);
-
     QWidget * systemTitleWidget = new QWidget;
     QVBoxLayout * systemVerLayout = new QVBoxLayout(systemTitleWidget);
 
@@ -207,8 +202,8 @@ void Shortcut::setupConnect(){
         addDialog->exec();
     });
 
-    connect(addDialog, &addShortcutDialog::shortcutInfoSignal, [=](QString path, QString name, QString exec){
-        createNewShortcut(path, name, exec);
+    connect(addDialog, &addShortcutDialog::shortcutInfoSignal, [=](QString path, QString name, QString exec, QString key){
+        createNewShortcut(path, name, exec, key);
     });
 }
 
@@ -270,8 +265,6 @@ void Shortcut::initFunctionStatus(){
 
         //自定义快捷键
         appendCustomItems();
-        ui->customListWidget->setFixedHeight((ui->customListWidget->count() + 1) * ITEMHEIGH);
-        initCustomItemsStyle();
         isCloudService = false;
     });
     connect(pThread, &QThread::finished, pWorker, &GetShortcutWorker::deleteLater);
@@ -366,84 +359,55 @@ void Shortcut::appendCustomItems(){
 }
 
 void Shortcut::buildCustomItem(KeyEntry * nkeyEntry){
-    DefineShortcutItem * singleWidget = new DefineShortcutItem(nkeyEntry->nameStr, nkeyEntry->bindingStr);
-    singleWidget->setDeleteable(true);
-    singleWidget->setUpdateable(true);
-//    singleWidget->setUserData(Qt::UserRole, nkeyEntry);
-    singleWidget->setProperty("userData", QVariant::fromValue(nkeyEntry));
-    connect(singleWidget, &DefineShortcutItem::updateShortcutSignal, [=]{
-        addDialog->setTitleText(QObject::tr("Update Shortcut"));
-        addDialog->setUpdateEnv(nkeyEntry->gsPath, nkeyEntry->nameStr, nkeyEntry->actionStr);
-        addDialog->exec();
+    QPushButton * customBtn = new QPushButton();
+    QHBoxLayout * customHorLayout = new QHBoxLayout(customBtn);
 
-    });
+    customBtn->setFixedHeight(40);
+    customBtn->setMaximumWidth(960);
+    customHorLayout->setSpacing(2);
+    customHorLayout->setContentsMargins(16, 0, 19, 0);
 
-    CustomLineEdit * line = singleWidget->lineeditComponent();
-    connect(line, &CustomLineEdit::shortcutCodeSignals, this, [=](QList<int> keyCode){
-        newBindingRequest(keyCode);
-    });
+    QLabel * nameLabel  = new QLabel(customBtn);
+    nameLabel->setText(nkeyEntry->nameStr);
 
-    QPushButton * button = singleWidget->btnComponent();
+    QLabel * bindingLabel = new QLabel(customBtn);
+    bindingLabel->setText(nkeyEntry->bindingStr);
 
+    customHorLayout->addWidget(nameLabel);
+    customHorLayout->addStretch();
+    customHorLayout->addWidget(bindingLabel);
 
-    QListWidgetItem * item = new QListWidgetItem(ui->customListWidget);
-//    item->setSizeHint(QSize(ui->customListWidget->width() - 4, ITEMHEIGH));
-    item->setSizeHint(QSize(QSizePolicy::Expanding, ITEMHEIGH));
-    item->setData(Qt::UserRole, nkeyEntry->gsPath);
-    ui->customListWidget->setItemWidget(item, singleWidget);
-
-
-    connect(button, &QPushButton::clicked, [=]{
-        int row = ui->customListWidget->row(item);
-        QListWidgetItem * obItem =  ui->customListWidget->takeItem(row);
-
-        delete obItem;
-
-        ui->customListWidget->setFixedHeight((ui->customListWidget->count() + 1) * ITEMHEIGH);
-
-        initCustomItemsStyle();
-
-        deleteCustomShortcut(nkeyEntry->gsPath);
-    });
+    customBtn->setLayout(customHorLayout);
+    ui->verticalLayout_3->addWidget(customBtn);
 }
 
-void Shortcut::initItemsStyle(QListWidget *listWidget){
-    int total = listWidget->count();
-    for (int row = 0; row < total; row++){
-        QString style;
-        QString subStyle;
-        if (1 == total){ //总数为1
-            style = "QWidget{background: #F4F4F4; border: none; border-radius: 6px;}";
-            subStyle = "background: #F4F4F4; border: none; border-radius: 4px;";
-        } else if (0 == row && (row % 2 == 0)){ //首位
-            style = "QWidget{background: #F4F4F4; border: none; border-top-left-radius: 6px; border-top-right-radius: 6px;}";
-            subStyle = "background: #F4F4F4; border: none; border-radius: 4px;";
-        } else if (total - 1 == row){ //末位
-            if (0 == row % 2){
-                style = "QWidget{background: #F4F4F4; border: none; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px;}";
-                subStyle = "background: #F4F4F4; border: none; border-radius: 4px;";
-            } else {
-                style = "QWidget{background: #EEEEEE; border: none; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px;}";
-                subStyle = "background: #EEEEEE; border: none; border-radius: 4px;";
-            }
-        } else if (row % 2 == 0){
-            style = "QWidget{background: #F4F4F4; border: none;}";
-            subStyle = "background: #F4F4F4; border: none; border-radius: 4px;";
-        } else if (row % 2 != 0){
-            style = "QWidget{background: #EEEEEE; border: none;}";
-            subStyle = "background: #EEEEEE; border: none; border-radius: 4px;";
-        }
-
-        QWidget * widget = listWidget->itemWidget(listWidget->item(row));
-        DefineShortcutItem * pShortcutItem = dynamic_cast<DefineShortcutItem *>(widget);
+QString Shortcut::keyToUI(QString key){
+    if(key.contains("+")){
+        QStringList keys = key.split("+");
+        QString keyToUI = keys.join("    ");
+        return keyToUI;
     }
+    return key;
 }
 
-void Shortcut::initCustomItemsStyle(){
-    initItemsStyle(ui->customListWidget);
+QString Shortcut::keyToLib(QString key){
+    if(key.contains("+")){
+        QStringList keys = key.split("+");
+        if(keys.count() == 2){
+            QString keyToLib = "<" + keys.at(0) + ">" + keys.at(1);
+            qDebug() << "count = 2,keyToLib = " << keyToLib;
+            return keyToLib;
+        } else if(keys.count() == 3){
+            QString keyToLib = "<" + keys.at(0) + ">" + "<" + keys.at(1) + ">" + keys.at(2);
+            qDebug() << "count = 3,keyToLib = " << keyToLib;
+            return keyToLib;
+        }
+    }
+    qDebug() << "count = 1,keyToLib = " << key;
+    return key;
 }
 
-void Shortcut::createNewShortcut(QString path, QString name, QString exec){
+void Shortcut::createNewShortcut(QString path, QString name, QString exec, QString key){
     QString availablepath;
     if (path.isEmpty()){
         availablepath = findFreePath(); //创建快捷键
@@ -452,19 +416,13 @@ void Shortcut::createNewShortcut(QString path, QString name, QString exec){
         KeyEntry * nKeyentry = new KeyEntry;
         nKeyentry->gsPath = availablepath;
         nKeyentry->nameStr = name;
-        nKeyentry->bindingStr = tr("disable");
+        nKeyentry->bindingStr = keyToUI(key);
         nKeyentry->actionStr = exec;
 
         customEntries.append(nKeyentry);
 
         /*********刷新界面(添加)******/
         buildCustomItem(nKeyentry);
-
-        ui->customListWidget->setFixedHeight((ui->customListWidget->count() + 1) * ITEMHEIGH);
-
-        initCustomItemsStyle();
-        /******************/
-
 
     } else {
         availablepath = path; //更新快捷键
@@ -478,25 +436,13 @@ void Shortcut::createNewShortcut(QString path, QString name, QString exec){
                 break;
             }
         }
-
-        //刷新界面(更新)
-        for (int row = 0; row < ui->customListWidget->count(); row++){
-            QListWidgetItem * item = ui->customListWidget->item(row);
-            if (!QString::compare(item->data(Qt::UserRole).toString(), availablepath)){
-                DefineShortcutItem * widgetItem = dynamic_cast<DefineShortcutItem *>(ui->customListWidget->itemWidget(item));
-                widgetItem->setShortcutName(name);
-                KeyEntry * uKeyentry = customEntries.at(i);
-//                widgetItem->setUserData(Qt::UserRole, uKeyentry);
-                widgetItem->setProperty("userData", QVariant::fromValue(uKeyentry));
-            }
-        }
     }
 
     const QByteArray id(KEYBINDINGS_CUSTOM_SCHEMA);
     const QByteArray idd(availablepath.toLatin1().data());
     QGSettings * settings = new QGSettings(id, idd);
 
-    settings->set(BINDING_KEY, tr("disable"));
+    settings->set(BINDING_KEY, key);
     settings->set(NAME_KEY, name);
     settings->set(ACTION_KEY, exec);
 
@@ -507,8 +453,6 @@ void Shortcut::deleteCustomShortcut(QString path){
     if (path.isEmpty())
         return;
 
-//    gboolean ret;
-//    GError ** error = NULL;
     QProcess p(0);
     QStringList args;
 
@@ -522,14 +466,6 @@ void Shortcut::deleteCustomShortcut(QString path){
     qDebug()<<"wait for finish";
     p.waitForFinished(-1);
     qDebug()<<QString::fromLocal8Bit(p.readAllStandardError());
-//    DConfClient * client = dconf_client_new ();
-
-//    ret = dconf_client_write_sync (client, fullpath, NULL, NULL, NULL, error);
-
-//    if (!ret)
-//        qDebug() << "Delete Custom ShortCut Failed!";
-
-//    g_object_unref (client);
 }
 
 void Shortcut::newBindingRequest(QList<int> keyCode){
@@ -750,9 +686,10 @@ bool Shortcut::keyIsForbidden(QString key){
 
 void Shortcut::shortcutChangedSlot(){
     qDebug() << "receive cloud service signal";
-    for(int i = 0; i < ui->customListWidget->count(); i++){
-        QListWidgetItem * obItem =  ui->customListWidget->takeItem(i);
-        delete obItem;
+    while(ui->verticalLayout_3->count()){
+        QWidget *p = ui->verticalLayout_3->takeAt(0)->widget();
+        ui->verticalLayout_3->removeWidget(p);
+        p->deleteLater();
     }
     isCloudService = true;
     initFunctionStatus();

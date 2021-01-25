@@ -58,7 +58,7 @@ private:
 
 
 Q_SIGNALS:
-    void shortcutInfoSignal(QString path, QString name, QString exec);
+    void shortcutInfoSignal(QString path, QString name, QString exec, QString key);
 };
 
 #endif // ADDSHORTCUTDIALOG_H

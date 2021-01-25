@@ -25,22 +25,7 @@
   <property name="windowTitle">
    <string notr="true">Shortcut</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_3">
-   <property name="spacing">
-    <number>16</number>
-   </property>
-   <property name="leftMargin">
-    <number>0</number>
-   </property>
-   <property name="topMargin">
-    <number>0</number>
-   </property>
-   <property name="rightMargin">
-    <number>32</number>
-   </property>
-   <property name="bottomMargin">
-    <number>48</number>
-   </property>
+  <layout class="QVBoxLayout" name="verticalLayout_4">
    <item>
     <widget class="QLabel" name="systemLabel">
      <property name="sizePolicy">
@@ -75,8 +60,28 @@
      <property name="spacing">
       <number>16</number>
      </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
      <item>
-      <widget class="QListWidget" name="customListWidget"/>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <property name="spacing">
+        <number>4</number>
+       </property>
+      </layout>
+     </item>
+     <item>
+      <spacer name="verticalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
      </item>
      <item>
       <widget class="QWidget" name="addWidget" native="true">

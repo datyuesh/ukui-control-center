@@ -20,7 +20,7 @@
 #include "addshortcutdialog.h"
 #include "ui_addshortcutdialog.h"
 #include "CloseButton/closebutton.h"
-
+#include <QDebug>
 #include "realizeshortcutwheel.h"
 
 #define DEFAULTPATH "/usr/share/applications/"
@@ -39,6 +39,16 @@ addShortcutDialog::addShortcutDialog(QWidget *parent) :
     ui->titleLabel->setStyleSheet("QLabel{font-size: 18px; color: palette(windowText);}");
     ui->noteLabel->setPixmap(QPixmap("://img/plugins/shortcut/note.png"));
     ui->stackedWidget->setCurrentIndex(1);
+    ui->kkeysequencewidget->setClearButtonShown(false);
+    ui->kkeysequencewidget->setMultiKeyShortcutsAllowed(false);
+    ui->kkeysequencewidget->setModifierlessAllowed(false);
+
+
+    connect(ui->kkeysequencewidget, &KKeySequenceWidget::keySequenceChanged, this, [=](QKeySequence seq){
+        if(ui->kkeysequencewidget->isKeySequenceAvailable(seq)){}
+        qDebug() << "keySequenceChanged" << seq << ui->kkeysequencewidget->isKeySequenceAvailable(seq);
+
+    });
 
     refreshCertainChecked();
 
@@ -71,7 +81,8 @@ addShortcutDialog::addShortcutDialog(QWidget *parent) :
         close();
     });
     connect(ui->certainBtn, &QPushButton::clicked, [=]{
-        emit shortcutInfoSignal(gsPath, ui->nameLineEdit->text(), selectedfile);
+        emit shortcutInfoSignal(gsPath, ui->nameLineEdit->text(), selectedfile,
+                                ui->kkeysequencewidget->keySequence().toString());
 
         close();
     });

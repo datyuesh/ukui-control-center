@@ -84,10 +84,7 @@ public:
     void buildCustomItem(KeyEntry * nkeyEntry);
     QWidget * buildGeneralWidget(QString schema, QMap<QString, QString> subShortcutsMap);
 
-    void initItemsStyle(QListWidget * listWidget);
-    void initCustomItemsStyle();
-
-    void createNewShortcut(QString path, QString name, QString exec);
+    void createNewShortcut(QString path, QString name, QString exec, QString key);
     void deleteCustomShortcut(QString path);
 
     void newBindingRequest(QList<int> keyCode);
@@ -96,9 +93,8 @@ public:
     bool keyIsForbidden(QString key);
     void connectToServer();
 
-protected:
-//    bool event(QEvent *event);
-//    bool eventFilter(QObject *watched, QEvent *event);
+    QString keyToUI(QString key);
+    QString keyToLib(QString key);
 
 private:
     Ui::Shortcut *ui;
