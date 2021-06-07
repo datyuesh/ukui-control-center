@@ -4,9 +4,11 @@
 
 extern void qt_blurImage(QImage &blurImage, qreal radius, bool quality, int transposed);
 
-ChangeUserName::ChangeUserName(QWidget *parent) :
+ChangeUserName::ChangeUserName(QStringList userlist, QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::ChangeUserName)
+    ui(new Ui::ChangeUserName),
+    usersStringList(userlist),
+    userNameTip(QString(""))
 {
     ui->setupUi(this);
     setWindowFlags(Qt::FramelessWindowHint | Qt::Tool);
@@ -14,11 +16,17 @@ ChangeUserName::ChangeUserName(QWidget *parent) :
     setAttribute(Qt::WA_DeleteOnClose);
 
     ui->saveBtn->setEnabled(false);
+    ui->tipLabel->setAlignment(Qt::AlignCenter);
+    ui->tipLabel->setText(userNameTip);
 
     connect(ui->lineEdit, &QLineEdit::textChanged, this, [=](QString txt){
-        if (!txt.isEmpty()){
+        if (!txt.isEmpty() && !usersStringList.contains(txt)){
+            userNameTip = "";
+            ui->tipLabel->setText(userNameTip);
             ui->saveBtn->setEnabled(true);
         } else {
+            userNameTip = tr("Name already in use, change another one.");
+            ui->tipLabel->setText(userNameTip);
             ui->saveBtn->setEnabled(false);
         }
     });

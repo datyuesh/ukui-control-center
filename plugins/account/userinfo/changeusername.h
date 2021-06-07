@@ -14,11 +14,14 @@ class ChangeUserName : public QDialog
     Q_OBJECT
 
 public:
-    explicit ChangeUserName(QWidget *parent = nullptr);
+    explicit ChangeUserName(QStringList userlist, QWidget *parent = nullptr);
     ~ChangeUserName();
 
 private:
     Ui::ChangeUserName *ui;
+
+    QStringList usersStringList;
+    QString userNameTip;
 
 protected:
     void paintEvent(QPaintEvent *);
